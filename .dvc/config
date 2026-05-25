@@ -1,2 +1,5 @@
 [core]
     analytics = false
+    remote = data
+['remote "data"']
+    url = s3://mlops-shuvam-dvc-bucket/dvcstore
