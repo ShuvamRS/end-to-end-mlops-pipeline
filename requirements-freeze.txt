@@ -15,7 +15,6 @@ anyio==4.13.0
 appdirs==1.4.4
 asgiref==3.11.1
 astunparse==1.6.3
-async-timeout==5.0.1
 asyncssh==2.23.0
 atpublic==7.0.0
 attrs==26.1.0
@@ -35,7 +34,7 @@ click-repl==0.3.0
 cloudpickle==3.1.2
 colorama==0.4.6
 configobj==5.0.9
-contourpy==1.3.2
+contourpy==1.3.3
 cryptography==48.0.0
 cycler==0.12.1
 dictdiffer==0.9.0
@@ -52,7 +51,6 @@ dvc-s3==3.3.0
 dvc-studio-client==0.22.0
 dvc-task==0.40.2
 entrypoints==0.4
-exceptiongroup==1.3.1
 filelock==3.29.0
 flatbuffers==25.12.19
 flatten-dict==0.5.0
@@ -74,12 +72,12 @@ httpcore==1.0.9
 httpx==0.28.1
 httpx-ws==0.9.0
 hydra-core==1.3.2
-idna==3.15
+idna==3.16
 iterative-telemetry==0.0.10
 Jinja2==3.1.6
 jmespath==1.1.0
 kantoku==0.18.3
-keras==3.12.2
+keras==3.14.1
 kiwisolver==1.5.0
 kombu==5.6.2
 libclang==18.1.1
@@ -91,8 +89,8 @@ mdurl==0.1.2
 ml_dtypes==0.5.4
 multidict==6.7.1
 namex==0.1.0
-networkx==3.4.2
-numpy==2.2.6
+networkx==3.6.1
+numpy==2.4.6
 nvidia-ml-py==13.595.45
 omegaconf==2.3.0
 opentelemetry-api==1.42.1
@@ -108,7 +106,7 @@ orjson==3.11.9
 packaging==26.2
 pathspec==0.12.1
 pillow==11.3.0
-pip==22.0.2
+pip==26.1.1
 pip-requirements-parser==32.0.1
 platformdirs==4.9.6
 prometheus_client==0.25.0
@@ -121,7 +119,7 @@ pydantic==2.13.4
 pydantic-settings==2.14.1
 pydantic_core==2.46.4
 pydot==4.0.1
-pygit2==1.18.2
+pygit2==1.19.2
 Pygments==2.20.0
 pygtrie==2.5.0
 pyparsing==3.3.2
@@ -139,7 +137,7 @@ s3fs==2026.4.0
 schema==0.7.8
 scmrepo==3.6.2
 semver==3.0.4
-setuptools==59.6.0
+setuptools==82.0.1
 shellingham==1.5.4
 shortuuid==1.0.13
 shtab==1.8.0
@@ -153,12 +151,11 @@ tensorboard==2.20.0
 tensorboard-data-server==0.7.2
 tensorflow==2.20.0
 termcolor==3.3.0
-tomli==2.4.1
 tomli_w==1.2.0
 tomlkit==0.15.0
 tornado==6.5.5
 tqdm==4.67.3
-typer==0.25.1
+typer==0.26.0
 typing-inspection==0.4.2
 typing_extensions==4.15.0
 tzdata==2026.2
@@ -171,7 +168,7 @@ watchfiles==1.2.0
 wcwidth==0.7.0
 Werkzeug==3.1.8
 wheel==0.47.0
-wrapt==2.2.0
+wrapt==2.2.1
 wsproto==1.3.2
 yarl==1.24.2
 zc.lockfile==4.0
