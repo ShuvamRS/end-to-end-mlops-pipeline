@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  train-and-report:
+  train-report-and-publish:
     permissions: write-all
     runs-on: ubuntu-latest
 
@@ -62,24 +62,18 @@ jobs:
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Fetch main branch for comparison
           git fetch --depth=1 origin main:main
 
-          # Add title to the report
           echo "# Experiment Report (${{ github.sha }})" >> report.md
 
-          # Compare parameters to main branch
           echo "## Params workflow vs. main" >> report.md
           dvc params diff main --md >> report.md
 
-          # Compare metrics to main branch
           echo "## Metrics workflow vs. main" >> report.md
           dvc metrics diff main --md >> report.md
 
-          # Compare plots to main branch
           dvc plots diff main
 
-          # Add plots to the report
           echo "## Plots" >> report.md
 
           echo "### Training History" >> report.md
@@ -100,5 +94,25 @@ jobs:
           echo "#### workspace" >> report.md
           echo '![](./dvc_plots/static/workspace_evaluation_plots_confusion_matrix.png "Confusion Matrix")' >> report.md
 
-          # Publish report as PR comment
           cml comment update --target=pr --publish report.md
+
+      - name: Login to Amazon ECR
+        if: github.ref == 'refs/heads/main'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Import the BentoML model
+        if: github.ref == 'refs/heads/main'
+        run: bentoml models import model/celestial_bodies_classifier_model.bentomodel
+
+      - name: Build the BentoML model artifact
+        if: github.ref == 'refs/heads/main'
+        run: bentoml build src
+
+      - name: Containerize and publish the BentoML model artifact Docker image
+        if: github.ref == 'refs/heads/main'
+        run: |
+          bentoml containerize celestial_bodies_classifier:latest \
+            --image-tag ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:latest \
+            --image-tag ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+
+          docker push --all-tags ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}
