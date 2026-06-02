@@ -116,3 +116,21 @@ jobs:
             --image-tag ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
 
           docker push --all-tags ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}
+           
+      - name: Configure kubectl for Amazon EKS
+        if: github.ref == 'refs/heads/main'
+        run: |
+          aws eks update-kubeconfig \
+            --region ${{ secrets.EKS_CLUSTER_REGION }} \
+            --name ${{ secrets.EKS_CLUSTER_NAME }}
+
+      - name: Update Kubernetes deployment image
+        if: github.ref == 'refs/heads/main'
+        run: |
+          sed -i "s|image: .*celestial-bodies-classifier:.*|image: ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}|g" kubernetes/deployment.yaml
+
+      - name: Deploy model to Kubernetes
+        if: github.ref == 'refs/heads/main'
+        run: |
+          kubectl apply -f kubernetes/deployment.yaml
+          kubectl apply -f kubernetes/service.yaml
