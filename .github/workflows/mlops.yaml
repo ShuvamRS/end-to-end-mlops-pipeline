@@ -9,10 +9,13 @@ on:
 
   workflow_dispatch:
 
+permissions: write-all
+
 jobs:
-  train-report-and-publish:
+  train-and-report:
+    runs-on: [self-hosted, base-runner]
+    if: github.event_name == 'pull_request'
     permissions: write-all
-    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -37,28 +40,22 @@ jobs:
       - name: Train model
         run: dvc repro --pull
 
-      - name: Install CML plot dependencies
-        if: github.event_name == 'pull_request'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            pkg-config \
-            libcairo2-dev \
-            libpango1.0-dev \
-            libjpeg-dev \
-            libgif-dev \
-            librsvg2-dev \
-            libfontconfig1-dev \
-            libpixman-1-dev
+      - name: Push the outcomes to DVC remote storage
+        run: dvc push
+
+      - name: Commit changes in dvc.lock
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: Commit changes in dvc.lock
+          file_pattern: dvc.lock
 
       - name: Setup CML
-        if: github.event_name == 'pull_request'
         uses: iterative/setup-cml@v2
         with:
           version: '0.20.6'
+          vega: false
 
       - name: Create CML report
-        if: github.event_name == 'pull_request'
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -96,41 +93,65 @@ jobs:
 
           cml comment update --target=pr --publish report.md
 
+  publish-and-deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions: write-all
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install --requirement requirements-freeze.txt
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.1.0
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Check model
+        run: dvc repro --pull
+
       - name: Login to Amazon ECR
-        if: github.ref == 'refs/heads/main'
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Import the BentoML model
-        if: github.ref == 'refs/heads/main'
         run: bentoml models import model/celestial_bodies_classifier_model.bentomodel
 
       - name: Build the BentoML model artifact
-        if: github.ref == 'refs/heads/main'
         run: bentoml build src
 
-      - name: Containerize and publish the BentoML model artifact Docker image
-        if: github.ref == 'refs/heads/main'
+      - name: Containerize the BentoML model artifact Docker image
         run: |
           bentoml containerize celestial_bodies_classifier:latest \
             --image-tag ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:latest \
             --image-tag ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
 
-          docker push --all-tags ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}
-           
+      - name: Push Docker image to Amazon ECR
+        run: |
+          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+
       - name: Configure kubectl for Amazon EKS
-        if: github.ref == 'refs/heads/main'
         run: |
           aws eks update-kubeconfig \
             --region ${{ secrets.EKS_CLUSTER_REGION }} \
             --name ${{ secrets.EKS_CLUSTER_NAME }}
 
       - name: Update Kubernetes deployment image
-        if: github.ref == 'refs/heads/main'
         run: |
           sed -i "s|image: .*celestial-bodies-classifier:.*|image: ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}|g" kubernetes/deployment.yaml
 
       - name: Deploy model to Kubernetes
-        if: github.ref == 'refs/heads/main'
         run: |
           kubectl apply -f kubernetes/deployment.yaml
           kubectl apply -f kubernetes/service.yaml
