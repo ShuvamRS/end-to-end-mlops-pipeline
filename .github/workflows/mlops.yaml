@@ -58,6 +58,14 @@ jobs:
       - name: Install dependencies
         run: pip install --requirement requirements-freeze.txt
 
+      - name: Fix DVC pathspec compatibility
+        run: |
+          pip install --force-reinstall "pathspec==0.12.1"
+          python - <<'PY'
+          from pathspec.patterns.gitwildmatch import _DIR_MARK
+          print("_DIR_MARK OK:", _DIR_MARK)
+          PY
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6.1.0
         with:
@@ -122,9 +130,9 @@ jobs:
           cml comment update --target=pr --publish report.md
 
   cleanup-runner:
-    needs: train-and-report
+    needs: [setup-runner, train-and-report]
     runs-on: [self-hosted, base-runner]
-    if: github.event_name == 'pull_request' && (success() || failure() || cancelled())
+    if: github.event_name == 'pull_request' && always()
     permissions: write-all
 
     steps:
@@ -147,7 +155,7 @@ jobs:
       - name: Cleanup specialized runner on Kubernetes
         run: |
           export GITHUB_RUN_ID="${{ github.run_id }}"
-          envsubst < kubernetes/runner-gpu.yaml | kubectl delete --wait=false -f -
+          envsubst < kubernetes/runner-gpu.yaml | kubectl delete --ignore-not-found=true --wait=false -f -
 
   publish-and-deploy:
     runs-on: ubuntu-latest
@@ -166,6 +174,14 @@ jobs:
 
       - name: Install dependencies
         run: pip install --requirement requirements-freeze.txt
+
+      - name: Fix DVC pathspec compatibility
+        run: |
+          pip install --force-reinstall "pathspec==0.12.1"
+          python - <<'PY'
+          from pathspec.patterns.gitwildmatch import _DIR_MARK
+          print("_DIR_MARK OK:", _DIR_MARK)
+          PY
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6.1.0
