@@ -5,3 +5,4 @@ dvc==3.63.0
 dvc[s3]==3.63.0
 bentoml==1.4.28
 pillow==11.3.0
+label-studio==1.23.0
