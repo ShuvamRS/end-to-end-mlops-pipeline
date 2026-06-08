@@ -37,6 +37,16 @@ RUN tar xzf ./actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz
 # Install extra dependencies for the runner
 RUN ./bin/installdependencies.sh
 
+# Install AWS CLI v2
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip" && \
+    unzip -q /tmp/awscliv2.zip -d /tmp && \
+    /tmp/aws/install && \
+    rm -rf /tmp/aws /tmp/awscliv2.zip
+
+# Install kubectl
+RUN curl -L -o /usr/local/bin/kubectl "https://dl.k8s.io/release/v1.34.0/bin/linux/amd64/kubectl" && \
+    chmod +x /usr/local/bin/kubectl
+
 COPY startup.sh .
 
 RUN chmod +x startup.sh && \
